@@ -1,11 +1,18 @@
 import { RequestHandler } from 'express';
+import { isValidObjectId } from 'mongoose';
+import crypto from 'crypto';
 
 import { SignupUserRequest, VerifyEmailRequest } from '#/@types/user';
 import User from '#/models/User';
 import { generateOTPToken } from '#/utils/helper';
-import { sendVerificationMail } from '#/utils/email';
+import {
+  sendForgotPasswordLink,
+  sendPassResetSuccessEmail,
+  sendVerificationMail,
+} from '#/utils/email';
 import EmailVerificationToken from '#/models/EmailVerificationToken';
-import { isValidObjectId } from 'mongoose';
+import PasswordResetToken from '#/models/PasswordResetToken';
+import { PASSWORD_RESET_LINK } from '#/utils/variables';
 
 export const signup: RequestHandler = async (
   req: SignupUserRequest,
@@ -98,4 +105,65 @@ export const sendReverificationToken: RequestHandler = async (
   });
 
   res.json({ message: 'Please check your mail box.' });
+};
+
+export const generateForgotPasswordLink: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  const {
+    body: { email },
+  } = req;
+
+  const existedUser = await User.findOne({ email });
+
+  if (!existedUser)
+    return res.status(404).json({ error: 'Invalid credentials.' });
+
+  await PasswordResetToken.findOneAndDelete({ owner: existedUser?._id });
+
+  const token = crypto.randomBytes(36).toString('hex');
+
+  await PasswordResetToken.create({
+    owner: existedUser?._id,
+    token,
+  });
+
+  const resetLink = `${PASSWORD_RESET_LINK}?token=${token}&userId=${existedUser?._id}`;
+
+  sendForgotPasswordLink({ email: existedUser?.email, link: resetLink });
+
+  return res.json({ message: 'Check your mail box, please' });
+};
+
+export const grantValid: RequestHandler = async (req, res, next) => {
+  return res.json({ valid: true });
+};
+
+export const updatePassword: RequestHandler = async (req, res, next) => {
+  const {
+    body: { password, userId },
+  } = req;
+
+  const existedUser = await User.findById(userId);
+
+  if (!existedUser)
+    return res.status(403).json({ error: 'Unauthorized access' });
+
+  const matched = await existedUser.comparePassword(password);
+
+  if (matched)
+    return res
+      .status(422)
+      .json({ error: 'The new password must be different' });
+
+  existedUser.password = password;
+  await existedUser.save();
+
+  await PasswordResetToken.findOneAndDelete({ owner: existedUser?._id });
+
+  sendPassResetSuccessEmail(existedUser?.name, existedUser?.email);
+
+  return res.json({ message: 'Password reset successfully.' });
 };
