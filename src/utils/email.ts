@@ -120,7 +120,7 @@ export const sendPassResetSuccessEmail = async (
       logo: 'cid:logo',
       banner: 'cid:forget_password',
       link: SIGN_IN_URL,
-      btnTitle: 'Update Password',
+      btnTitle: 'Log in',
     }),
     attachments: [
       {
