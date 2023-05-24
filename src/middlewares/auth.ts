@@ -45,6 +45,7 @@ export const protect: RequestHandler = async (req, res, next) => {
     followings: user?.followings?.length,
     avatar: user?.avatar?.url,
   };
+  req.token = token;
 
   next();
 };

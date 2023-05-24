@@ -10,6 +10,7 @@ import {
   updateProfile,
   signin,
   myInfo,
+  signout,
 } from '#/controllers/auth';
 import { validate } from '#/middlewares/validator';
 import {
@@ -25,6 +26,7 @@ const router = Router();
 
 router.post('/signup', validate(SignupUserSchema), signup);
 router.post('/signin', validate(SigninUserSchema), signin);
+router.post('/signout', protect, signout);
 router.post('/verify-email', validate(TokenAndIDValidation), verifyEmail);
 router.post('/re-verify-email', sendReverificationToken);
 router.post('/forgot-password', generateForgotPasswordLink);

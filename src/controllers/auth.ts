@@ -267,3 +267,28 @@ export const updateProfile: RequestHandler = async (
     user: formatUser(existedUser),
   });
 };
+
+export const signout: RequestHandler = async (req, res, next) => {
+  const {
+    query: { fromAll },
+    user: { id },
+    token,
+  } = req;
+
+  const existedUser = await User.findById(id);
+  if (!existedUser)
+    throw new Error('OOOPS! Something went WRONG, user not found!');
+
+  // logout from all devices
+  if (fromAll && fromAll === 'yes') {
+    existedUser.tokens = [];
+  } else {
+    existedUser.tokens = existedUser.tokens.filter((el) => el !== token);
+  }
+
+  await existedUser.save();
+
+  return res.json({
+    success: true,
+  });
+};
