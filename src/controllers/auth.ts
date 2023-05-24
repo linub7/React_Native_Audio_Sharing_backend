@@ -1,8 +1,12 @@
 import { RequestHandler } from 'express';
 import { isValidObjectId } from 'mongoose';
 import crypto from 'crypto';
-
-import { SignupUserRequest, VerifyEmailRequest } from '#/@types/user';
+import JWT from 'jsonwebtoken';
+import {
+  SigninUserRequest,
+  SignupUserRequest,
+  VerifyEmailRequest,
+} from '#/@types/user';
 import User from '#/models/User';
 import { generateOTPToken } from '#/utils/helper';
 import {
@@ -12,7 +16,11 @@ import {
 } from '#/utils/email';
 import EmailVerificationToken from '#/models/EmailVerificationToken';
 import PasswordResetToken from '#/models/PasswordResetToken';
-import { PASSWORD_RESET_LINK } from '#/utils/variables';
+import {
+  JWT_EXPIRES_IN,
+  JWT_SECRET,
+  PASSWORD_RESET_LINK,
+} from '#/utils/variables';
 
 export const signup: RequestHandler = async (
   req: SignupUserRequest,
@@ -44,6 +52,42 @@ export const signup: RequestHandler = async (
   res
     .status(201)
     .json({ user: { id: user._id, name: user.name, email: user.email } });
+};
+
+export const signin: RequestHandler = async (
+  req: SigninUserRequest,
+  res,
+  next
+) => {
+  const {
+    body: { email, password },
+  } = req;
+
+  const existedUser = await User.findOne({ email });
+  if (!existedUser)
+    return res.status(403).json({ error: 'Invalid credentials!' });
+
+  const matched = await existedUser.comparePassword(password);
+  if (!matched) return res.status(403).json({ error: 'Invalid credentials!' });
+
+  const token = JWT.sign({ userId: existedUser?._id }, JWT_SECRET);
+
+  existedUser.tokens.push(token);
+
+  await existedUser.save();
+
+  return res.json({
+    user: {
+      id: existedUser?._id,
+      name: existedUser?.name,
+      email: existedUser?.email,
+      verified: existedUser?.verified,
+      followers: existedUser?.followers?.length,
+      followings: existedUser?.followings?.length,
+      avatar: existedUser?.avatar?.url,
+    },
+    token,
+  });
 };
 
 export const verifyEmail: RequestHandler = async (

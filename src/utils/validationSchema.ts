@@ -20,6 +20,10 @@ export const SignupUserSchema = yup.object().shape({
       'Password should contain alphabetical characters and special character and numbers.'
     ),
 });
+export const SigninUserSchema = yup.object().shape({
+  email: yup.string().required('Email is required').email('Invalid email!'),
+  password: yup.string().trim().required('Password is required'),
+});
 
 export const TokenAndIDValidation = yup.object().shape({
   token: yup.string().trim().required('Invalid token'),
