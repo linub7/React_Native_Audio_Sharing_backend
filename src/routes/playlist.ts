@@ -5,6 +5,7 @@ import {
   createPlaylist,
   updatePlaylist,
   deletePlaylist,
+  getMyPlaylists,
 } from '#/controllers/playlist';
 import { isVerifiedAccount, protect } from '#/middlewares/auth';
 import { validate } from '#/middlewares/validator';
@@ -41,4 +42,5 @@ router
   )
   .delete(protect, isVerifiedAccount, deletePlaylist);
 
+router.get('/me', protect, isVerifiedAccount, getMyPlaylists);
 export default router;
