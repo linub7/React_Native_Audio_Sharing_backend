@@ -1,8 +1,9 @@
 import { RequestHandler } from 'express';
 import { isValidObjectId } from 'mongoose';
 
-import Audio from '#/models/Audio';
+import Audio, { AudioDocument } from '#/models/Audio';
 import Favorite from '#/models/Favorite';
+import { PopulateFavoriteList } from '#/@types/audio';
 
 export const toggleFavorite: RequestHandler = async (req, res, next) => {
   const {
@@ -64,5 +65,52 @@ export const toggleFavorite: RequestHandler = async (req, res, next) => {
 
   return res.json({
     status,
+  });
+};
+
+export const getFavorites: RequestHandler = async (req, res, next) => {
+  const {
+    user: { id },
+  } = req;
+
+  const favorites = await Favorite.findOne({ owner: id }).populate<{
+    items: PopulateFavoriteList;
+  }>({
+    path: 'items',
+    populate: {
+      path: 'owner',
+    },
+  });
+
+  if (!favorites) return res.json({ audios: [] });
+
+  const audios = favorites.items?.map((item) => {
+    return {
+      id: item._id,
+      title: item.title,
+      category: item.category,
+      file: item.file?.url,
+      poster: item.poster?.url,
+      owner: { name: item.owner?.name, id: item.owner?._id },
+    };
+  });
+
+  return res.json({
+    audios,
+  });
+};
+
+export const getIsFavorite: RequestHandler = async (req, res, next) => {
+  const {
+    user: { id },
+  } = req;
+  const audioId = req.query?.audioId as string;
+  if (!isValidObjectId(audioId))
+    return res.status(422).json({ error: 'Please provide a valid audio id' });
+
+  const favorite = await Favorite.findOne({ owner: id, items: audioId });
+
+  return res.json({
+    result: favorite ? true : false,
   });
 };
