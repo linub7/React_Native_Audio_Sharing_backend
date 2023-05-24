@@ -4,6 +4,7 @@ import './db';
 import authRoutes from './routes/auth';
 import audioRoutes from './routes/audio';
 import favoriteRoutes from './routes/favorite';
+import playlistRoutes from './routes/playlist';
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.static('src/public'));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/audios', audioRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
+app.use('/api/v1/playlists', playlistRoutes);
 
 const PORT = process.env.PORT || 8989;
 

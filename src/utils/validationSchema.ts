@@ -32,11 +32,7 @@ export const TokenAndIDValidation = yup.object().shape({
   userId: yup
     .string()
     .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      } else {
-        return '';
-      }
+      return this.isType(value) && isValidObjectId(value) ? value : '';
     })
     .required('Invalid user id'),
 });
@@ -46,11 +42,7 @@ export const UpdatePasswordSchema = yup.object().shape({
   userId: yup
     .string()
     .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      } else {
-        return '';
-      }
+      return this.isType(value) && isValidObjectId(value) ? value : '';
     })
     .required('Invalid user id'),
   password: yup
@@ -71,4 +63,30 @@ export const AudioValidationSchema = yup.object().shape({
     .string()
     .oneOf(categories, 'Invalid Category')
     .required('Category is required'),
+});
+
+export const NewPlaylistValidationSchema = yup.object().shape({
+  title: yup.string().required('Title is required'),
+  resId: yup.string().transform(function (value) {
+    return this.isType(value) && isValidObjectId(value) ? value : '';
+  }),
+  visibility: yup
+    .string()
+    .oneOf(['public', 'private'], 'visibility must be public or private')
+    .required('Visibility is required'),
+});
+
+export const OldPlaylistValidationSchema = yup.object().shape({
+  title: yup.string().required('Title is required'),
+  // this is gonna validate audio id
+  item: yup.string().transform(function (value) {
+    return this.isType(value) && isValidObjectId(value) ? value : '';
+  }),
+  // this is gonna validate playlist id
+  id: yup.string().transform(function (value) {
+    return this.isType(value) && isValidObjectId(value) ? value : '';
+  }),
+  visibility: yup
+    .string()
+    .oneOf(['public', 'private'], 'visibility must be public or private'),
 });
