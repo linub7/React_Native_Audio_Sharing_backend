@@ -49,3 +49,14 @@ export const protect: RequestHandler = async (req, res, next) => {
 
   next();
 };
+
+export const isVerifiedAccount: RequestHandler = async (req, res, next) => {
+  const {
+    user: { verified },
+  } = req;
+
+  if (!verified)
+    return res.status(403).json({ error: 'Please verify your email account!' });
+
+  next();
+};
