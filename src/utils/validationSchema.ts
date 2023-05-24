@@ -82,10 +82,6 @@ export const OldPlaylistValidationSchema = yup.object().shape({
   item: yup.string().transform(function (value) {
     return this.isType(value) && isValidObjectId(value) ? value : '';
   }),
-  // this is gonna validate playlist id
-  id: yup.string().transform(function (value) {
-    return this.isType(value) && isValidObjectId(value) ? value : '';
-  }),
   visibility: yup
     .string()
     .oneOf(['public', 'private'], 'visibility must be public or private'),

@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { isValidObjectId } from 'mongoose';
 
-import { createPlaylist, updatePlaylist } from '#/controllers/playlist';
+import {
+  createPlaylist,
+  updatePlaylist,
+  deletePlaylist,
+} from '#/controllers/playlist';
 import { isVerifiedAccount, protect } from '#/middlewares/auth';
 import { validate } from '#/middlewares/validator';
 import {
@@ -34,6 +38,7 @@ router
     isVerifiedAccount,
     validate(OldPlaylistValidationSchema),
     updatePlaylist
-  );
+  )
+  .delete(protect, isVerifiedAccount, deletePlaylist);
 
 export default router;

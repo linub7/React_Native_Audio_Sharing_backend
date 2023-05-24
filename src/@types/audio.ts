@@ -20,7 +20,6 @@ export interface UpdatePlaylistRequest extends Request {
   body: {
     title: string;
     item: string;
-    id: string;
     visibility?: 'public' | 'private';
   };
 }
