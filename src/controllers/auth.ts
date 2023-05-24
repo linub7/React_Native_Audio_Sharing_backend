@@ -2,13 +2,16 @@ import { RequestHandler } from 'express';
 import { isValidObjectId } from 'mongoose';
 import crypto from 'crypto';
 import JWT from 'jsonwebtoken';
+import cloudinary from '#/cloud';
+import formidable from 'formidable';
+
 import {
   SigninUserRequest,
   SignupUserRequest,
   VerifyEmailRequest,
 } from '#/@types/user';
 import User from '#/models/User';
-import { generateOTPToken } from '#/utils/helper';
+import { formatUser, generateOTPToken } from '#/utils/helper';
 import {
   sendForgotPasswordLink,
   sendPassResetSuccessEmail,
@@ -16,11 +19,8 @@ import {
 } from '#/utils/email';
 import EmailVerificationToken from '#/models/EmailVerificationToken';
 import PasswordResetToken from '#/models/PasswordResetToken';
-import {
-  JWT_EXPIRES_IN,
-  JWT_SECRET,
-  PASSWORD_RESET_LINK,
-} from '#/utils/variables';
+import { JWT_SECRET, PASSWORD_RESET_LINK } from '#/utils/variables';
+import { RequestWithFiles } from '#/middlewares/fileParser';
 
 export const signup: RequestHandler = async (
   req: SignupUserRequest,
@@ -185,6 +185,12 @@ export const grantValid: RequestHandler = async (req, res, next) => {
   return res.json({ valid: true });
 };
 
+export const myInfo: RequestHandler = async (req, res, next) => {
+  const { user } = req;
+
+  return res.json({ user });
+};
+
 export const updatePassword: RequestHandler = async (req, res, next) => {
   const {
     body: { password, userId },
@@ -210,4 +216,54 @@ export const updatePassword: RequestHandler = async (req, res, next) => {
   sendPassResetSuccessEmail(existedUser?.name, existedUser?.email);
 
   return res.json({ message: 'Password reset successfully.' });
+};
+
+export const updateProfile: RequestHandler = async (
+  req: RequestWithFiles,
+  res,
+  next
+) => {
+  const {
+    body: { name },
+    user: { id },
+  } = req;
+  const avatar = req.files?.avatar as formidable.File;
+
+  const existedUser = await User.findById(id).select('-password');
+  if (!existedUser)
+    throw new Error('OOOPS! Something went WRONG, user not found!');
+
+  if (typeof name !== 'string')
+    return res.status(422).json({ error: 'Invalid name!' });
+
+  if (name.trim().length < 2)
+    return res.status(422).json({ error: 'Invalid name!' });
+
+  existedUser.name = name;
+
+  if (avatar) {
+    if (existedUser.avatar?.publicId) {
+      await cloudinary.uploader.destroy(existedUser.avatar?.publicId);
+    }
+
+    const { public_id, secure_url } = await cloudinary.uploader.upload(
+      avatar.filepath,
+      {
+        width: 300,
+        height: 300,
+        crop: 'thumb',
+        gravity: 'face',
+      }
+    );
+    existedUser.avatar = {
+      url: secure_url,
+      publicId: public_id,
+    };
+  }
+
+  await existedUser.save();
+
+  return res.json({
+    user: formatUser(existedUser),
+  });
 };

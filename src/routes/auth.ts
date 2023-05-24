@@ -7,7 +7,9 @@ import {
   generateForgotPasswordLink,
   grantValid,
   updatePassword,
+  updateProfile,
   signin,
+  myInfo,
 } from '#/controllers/auth';
 import { validate } from '#/middlewares/validator';
 import {
@@ -17,6 +19,7 @@ import {
   SigninUserSchema,
 } from '#/utils/validationSchema';
 import { isValidPassResetToken, protect } from '#/middlewares/auth';
+import fileParser from '#/middlewares/fileParser';
 
 const router = Router();
 
@@ -39,10 +42,8 @@ router.post(
   updatePassword
 );
 
-router.get('/test', protect, (req, res) => {
-  res.json({
-    user: req?.user,
-  });
-});
+router.get('/me', protect, myInfo);
+
+router.post('/update-profile', protect, fileParser, updateProfile);
 
 export default router;
