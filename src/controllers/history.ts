@@ -1,7 +1,8 @@
-import Audio from '#/models/Audio';
-import History, { HistoryType } from '#/models/History';
 import { RequestHandler } from 'express';
 import { isValidObjectId } from 'mongoose';
+
+import Audio from '#/models/Audio';
+import History, { HistoryType } from '#/models/History';
 
 export const updateHistory: RequestHandler = async (req, res, next) => {
   const {
@@ -85,6 +86,38 @@ export const updateHistory: RequestHandler = async (req, res, next) => {
       $set: { last: history },
     });
   }
+
+  return res.json({
+    success: true,
+  });
+};
+
+export const removeHistory: RequestHandler = async (req, res, next) => {
+  const {
+    user: { id },
+    query: { all },
+  } = req;
+
+  const removeAll = all === 'yes';
+
+  if (removeAll) {
+    const existedHistory = await History.findOneAndDelete({ owner: id });
+    if (!existedHistory)
+      return res.status(404).json({ error: 'history was not found!' });
+
+    return res.json({ success: true });
+  }
+
+  const histories = req.query.histories as string;
+
+  const ids = JSON.parse(histories) as string[];
+  console.log('ids: ', ids);
+
+  await History.findOneAndUpdate(
+    { owner: id },
+    { $pull: { all: { _id: ids } } },
+    { new: true }
+  );
 
   return res.json({
     success: true,

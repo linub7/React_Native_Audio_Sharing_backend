@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { isValidObjectId } from 'mongoose';
 
-import { updateHistory } from '#/controllers/history';
+import { removeHistory, updateHistory } from '#/controllers/history';
 import { protect } from '#/middlewares/auth';
 import { validate } from '#/middlewares/validator';
 import { UpdateHistorySchema } from '#/utils/validationSchema';
@@ -15,6 +15,9 @@ router.param('id', (req, res, next, val) => {
   next();
 });
 
-router.route('/').post(protect, validate(UpdateHistorySchema), updateHistory);
+router
+  .route('/')
+  .post(protect, validate(UpdateHistorySchema), updateHistory)
+  .delete(protect, removeHistory);
 
 export default router;
