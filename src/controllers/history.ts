@@ -3,6 +3,8 @@ import { isValidObjectId } from 'mongoose';
 
 import Audio from '#/models/Audio';
 import History, { HistoryType } from '#/models/History';
+import { PaginationQuery } from '#/@types/misc';
+import { LIMIT_AMOUNT } from '#/constants';
 
 export const updateHistory: RequestHandler = async (req, res, next) => {
   const {
@@ -122,4 +124,80 @@ export const removeHistory: RequestHandler = async (req, res, next) => {
   return res.json({
     success: true,
   });
+};
+
+export const getHistories: RequestHandler = async (req, res, next) => {
+  const {
+    user: { id },
+  } = req;
+
+  const { page, limit } = req.query as PaginationQuery;
+
+  const pageNumber = parseInt(page, 10) || 1;
+  const limitAmount = parseInt(limit, 10) || LIMIT_AMOUNT;
+  const startIndex = (pageNumber - 1) * limitAmount;
+
+  const histories = await History.aggregate([
+    { $match: { owner: id } },
+    {
+      $project: {
+        all: {
+          // create "all" key
+          $slice: ['$all', startIndex, limitAmount], // imply pagination
+        },
+      },
+    },
+    {
+      $unwind: '$all', // all come from line 144
+    },
+    {
+      // act populate in aggregation
+      $lookup: {
+        from: 'audios', // audios -> Audio collection name -> come from mongodb compass
+        localField: 'all.audio',
+        foreignField: '_id',
+        as: 'audioInfo',
+      },
+    },
+    {
+      $unwind: '$audioInfo', // audioInfo come from line 159
+    },
+    {
+      $project: {
+        _id: 0, // de-select _id
+        id: '$all._id', // historyId
+        audioId: '$audioInfo._id', //audioId
+        date: '$all.date',
+        title: '$audioInfo.title',
+      },
+    },
+    {
+      // group histories by date
+      $group: {
+        _id: {
+          $dateToString: {
+            // convert date to string
+            format: '%Y-%m-%d',
+            date: '$date',
+          },
+        },
+        audios: {
+          $push: '$$ROOT',
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        id: '$id',
+        date: '$_id',
+        audios: '$$ROOT.audios',
+      },
+    },
+    {
+      $sort: { date: -1 },
+    },
+  ]);
+
+  return res.json({ histories });
 };
