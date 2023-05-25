@@ -6,6 +6,7 @@ import {
   updatePlaylist,
   deletePlaylist,
   getMyPlaylists,
+  getSinglePlaylist,
 } from '#/controllers/playlist';
 import { isVerifiedAccount, protect } from '#/middlewares/auth';
 import { validate } from '#/middlewares/validator';
@@ -34,6 +35,7 @@ router
 
 router
   .route('/:id')
+  .get(protect, getSinglePlaylist)
   .patch(
     protect,
     isVerifiedAccount,

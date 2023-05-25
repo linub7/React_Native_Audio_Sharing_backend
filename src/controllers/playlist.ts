@@ -1,4 +1,8 @@
-import { CreatePlaylistRequest, UpdatePlaylistRequest } from '#/@types/audio';
+import {
+  CreatePlaylistRequest,
+  PopulateFavoriteList,
+  UpdatePlaylistRequest,
+} from '#/@types/audio';
 import Audio from '#/models/Audio';
 import Playlist from '#/models/Playlist';
 import { RequestHandler } from 'express';
@@ -140,10 +144,22 @@ export const getMyPlaylists: RequestHandler = async (req, res, next) => {
     user: { id },
   } = req;
 
+  const { page, limit } = req.query as {
+    page: string;
+    limit: string;
+  };
+
+  const pageNumber = parseInt(page, 10) || 1;
+  const limitAmount = parseInt(limit, 10) || 2;
+  const startIndex = (pageNumber - 1) * limitAmount;
+
   const data = await Playlist.find({
     owner: id,
     visibility: { $ne: 'auto' },
-  }).sort('-createdAt');
+  })
+    .skip(startIndex)
+    .limit(limitAmount)
+    .sort('-createdAt');
 
   const playlists = data?.map((el) => {
     return {
@@ -155,4 +171,42 @@ export const getMyPlaylists: RequestHandler = async (req, res, next) => {
   });
 
   return res.json({ playlists });
+};
+
+export const getSinglePlaylist: RequestHandler = async (req, res, next) => {
+  const {
+    params: { id },
+    user,
+  } = req;
+
+  const playlist = await Playlist.findOne({
+    owner: user.id,
+    _id: id,
+  }).populate<{ items: PopulateFavoriteList[] }>({
+    path: 'items',
+    populate: {
+      path: 'owner',
+      select: 'name',
+    },
+  });
+  if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+
+  const audios = playlist.items?.map((item) => {
+    return {
+      id: item?._id,
+      title: item?.title,
+      category: item?.category,
+      file: item?.file?.url,
+      poster: item?.poster?.url,
+      owner: { name: item?.owner?.name, id: item?.owner?._id },
+    };
+  });
+
+  return res.json({
+    list: {
+      id: playlist._id,
+      title: playlist.title,
+      audios,
+    },
+  });
 };

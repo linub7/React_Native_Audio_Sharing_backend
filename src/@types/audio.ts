@@ -6,7 +6,7 @@ import { Request } from 'express';
 export type PopulateFavoriteList = AudioDocument<{
   _id: ObjectId;
   name: string;
-}>[];
+}>;
 
 export interface CreatePlaylistRequest extends Request {
   body: {

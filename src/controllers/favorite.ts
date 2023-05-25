@@ -74,7 +74,7 @@ export const getFavorites: RequestHandler = async (req, res, next) => {
   } = req;
 
   const favorites = await Favorite.findOne({ owner: id }).populate<{
-    items: PopulateFavoriteList;
+    items: PopulateFavoriteList[];
   }>({
     path: 'items',
     populate: {
