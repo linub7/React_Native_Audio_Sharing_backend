@@ -3,6 +3,7 @@ import { isValidObjectId } from 'mongoose';
 
 import {
   getHistories,
+  getRecentlyPlayed,
   removeHistory,
   updateHistory,
 } from '#/controllers/history';
@@ -24,5 +25,7 @@ router
   .get(protect, getHistories)
   .post(protect, validate(UpdateHistorySchema), updateHistory)
   .delete(protect, removeHistory);
+
+router.get('/recently-played', protect, getRecentlyPlayed);
 
 export default router;

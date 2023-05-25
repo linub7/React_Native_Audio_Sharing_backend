@@ -201,3 +201,81 @@ export const getHistories: RequestHandler = async (req, res, next) => {
 
   return res.json({ histories });
 };
+
+export const getRecentlyPlayed: RequestHandler = async (req, res, next) => {
+  const {
+    user: { id },
+  } = req;
+  const recentlyPlayed = await History.aggregate([
+    { $match: { owner: id } }, // match
+    {
+      // sliceMatch
+      $project: {
+        myHistory: {
+          $slice: ['$all', 10],
+        },
+      },
+    },
+    {
+      // dateSort
+      $project: {
+        histories: {
+          $sortArray: {
+            input: '$myHistory', // myHistory -> come from line 214
+            sortBy: { date: -1 },
+          },
+        },
+      },
+    },
+    {
+      // unwind with index
+      $unwind: {
+        path: '$histories', // histories -> come from 222
+        includeArrayIndex: 'index',
+      },
+    },
+    {
+      // populate audio
+      $lookup: {
+        from: 'audios', // Audio collection name -> come from mongo compass,
+        localField: 'histories.audio', // histories -> come from line 222
+        foreignField: '_id',
+        as: 'audioInfo',
+      },
+    },
+    {
+      $unwind: '$audioInfo',
+    },
+    {
+      // populate owner
+      $lookup: {
+        from: 'users',
+        localField: 'audioInfo.owner',
+        foreignField: '_id',
+        as: 'owner',
+      },
+    },
+    {
+      $unwind: '$owner',
+    },
+    {
+      // shaping the output
+      $project: {
+        _id: 0,
+        id: '$audioInfo._id',
+        title: '$audioInfo.title',
+        about: '$audioInfo.about',
+        file: '$audioInfo.file.url',
+        poster: '$audioInfo.poster.url',
+        category: '$audioInfo.category',
+        owner: { name: '$owner.name', id: '$owner._id' },
+        date: '$histories.date',
+        progress: '$histories.progress',
+      },
+    },
+  ]);
+
+  res.json({
+    recentlyPlayed,
+  });
+};
