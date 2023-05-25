@@ -3,6 +3,8 @@ import {
   PopulateFavoriteList,
   UpdatePlaylistRequest,
 } from '#/@types/audio';
+import { PaginationQuery } from '#/@types/misc';
+import { LIMIT_AMOUNT } from '#/constants';
 import Audio from '#/models/Audio';
 import Playlist from '#/models/Playlist';
 import { RequestHandler } from 'express';
@@ -144,13 +146,10 @@ export const getMyPlaylists: RequestHandler = async (req, res, next) => {
     user: { id },
   } = req;
 
-  const { page, limit } = req.query as {
-    page: string;
-    limit: string;
-  };
+  const { page, limit } = req.query as PaginationQuery;
 
   const pageNumber = parseInt(page, 10) || 1;
-  const limitAmount = parseInt(limit, 10) || 2;
+  const limitAmount = parseInt(limit, 10) || LIMIT_AMOUNT;
   const startIndex = (pageNumber - 1) * limitAmount;
 
   const data = await Playlist.find({

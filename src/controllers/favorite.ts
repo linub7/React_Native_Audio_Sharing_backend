@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { isValidObjectId } from 'mongoose';
 
-import Audio, { AudioDocument } from '#/models/Audio';
+import Audio from '#/models/Audio';
 import Favorite from '#/models/Favorite';
 import { PopulateFavoriteList } from '#/@types/audio';
 
