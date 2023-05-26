@@ -1,7 +1,11 @@
 import { Router } from 'express';
 
 import { protect, isVerifiedAccount } from '#/middlewares/auth';
-import { createAudio, updateAudio } from '#/controllers/audio';
+import {
+  getLatestUploads,
+  createAudio,
+  updateAudio,
+} from '#/controllers/audio';
 import fileParser from '#/middlewares/fileParser';
 import { validate } from '#/middlewares/validator';
 import { AudioValidationSchema } from '#/utils/validationSchema';
@@ -35,5 +39,7 @@ router
     validate(AudioValidationSchema),
     updateAudio
   );
+
+router.get('/latest-uploads', getLatestUploads);
 
 export default router;

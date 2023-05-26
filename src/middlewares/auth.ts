@@ -50,6 +50,31 @@ export const protect: RequestHandler = async (req, res, next) => {
   next();
 };
 
+export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  const token = req.headers?.authorization?.split(' ')[1];
+
+  if (token) {
+    const payload = JWT.verify(token, JWT_SECRET) as JwtPayload;
+    const id = payload?.userId;
+
+    const user = await User.findOne({ _id: id, tokens: token });
+    if (!user) return res.status(403).json({ error: 'Unauthorized request!' });
+
+    req.user = {
+      id: user?._id,
+      name: user?.name,
+      email: user?.email,
+      verified: user?.verified,
+      followers: user?.followers?.length,
+      followings: user?.followings?.length,
+      avatar: user?.avatar?.url,
+    };
+    req.token = token;
+  }
+
+  next();
+};
+
 export const isVerifiedAccount: RequestHandler = async (req, res, next) => {
   const {
     user: { verified },

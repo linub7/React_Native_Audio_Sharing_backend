@@ -1,9 +1,13 @@
+import { RequestHandler } from 'express';
+import moment from 'moment';
+
 import { PaginationQuery } from '#/@types/misc';
 import { LIMIT_AMOUNT } from '#/constants';
 import Audio from '#/models/Audio';
+import History from '#/models/History';
 import Playlist from '#/models/Playlist';
 import User from '#/models/User';
-import { RequestHandler } from 'express';
+import { PipelineStage } from 'mongoose';
 
 export const updateFollower: RequestHandler = async (req, res, next) => {
   const {
@@ -183,5 +187,125 @@ export const getPublicPlaylist: RequestHandler = async (req, res, next) => {
 
   return res.json({
     playlists,
+  });
+};
+
+export const getRecommendedByProfile: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  const { user } = req;
+
+  let matchOptions: PipelineStage.Match = {
+    $match: { _id: { $exists: true } },
+  }; // fetch all the audios === Audio.find({})
+
+  if (user) {
+    // then we want to send by te profile
+
+    // fetch users previous history
+    const userPreviousHistory = await History.aggregate([
+      { $match: { owner: user.id } }, // select user history
+      {
+        $unwind: '$all',
+      },
+      {
+        $match: {
+          'all.date': {
+            // only those histories which are not older than 30 days
+            $gte: moment().subtract(30, 'days').toDate(),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$all.audio',
+        },
+      },
+      {
+        $lookup: {
+          from: 'audios', // audios is name of Audio models in mongo compass
+          localField: '_id', // this _id comes from line 218 -> we write _id: '$all.audio' ourselves
+          foreignField: '_id', // this _id comes from Audio Model
+          as: 'audioInfo',
+        },
+      },
+      {
+        $unwind: '$audioInfo', // comes from line 226
+      },
+      {
+        $group: {
+          _id: null,
+          category: {
+            $addToSet: '$audioInfo.category',
+          },
+        },
+      },
+    ]);
+    /**
+      output is like this: 
+        
+	         [
+		        {
+			        "_id": null,
+			        "category": [
+				        "Arts",
+				        "Music"
+			        ]
+		        }
+	        ]        
+    */
+
+    const categories = userPreviousHistory[0]?.category;
+    if (categories.length) {
+      matchOptions = {
+        $match: { category: { $in: categories } },
+      };
+    }
+  }
+
+  // otherwise we will send generic audios
+  const audios = await Audio.aggregate([
+    matchOptions,
+    {
+      $sort: {
+        'likes.count': -1, // sorting audios based on likes count DESC
+      },
+    },
+    {
+      $limit: 10,
+    },
+    {
+      // populate owner
+      $lookup: {
+        from: 'users',
+        localField: 'owner',
+        foreignField: '_id',
+        as: 'ownerInfo',
+      },
+    },
+    {
+      $unwind: '$ownerInfo',
+    },
+    {
+      $project: {
+        _id: 0,
+        id: '$_id',
+        title: '$title',
+        category: '$category',
+        about: '$about',
+        file: '$file.url',
+        poster: '$poster.url',
+        owner: {
+          name: '$ownerInfo.name',
+          id: '$ownerInfo._id',
+        },
+      },
+    },
+  ]);
+
+  return res.json({
+    audios,
   });
 };

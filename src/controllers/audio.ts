@@ -5,6 +5,7 @@ import cloudinary from '#/cloud';
 import { RequestWithFiles } from '#/middlewares/fileParser';
 import { categoriesTypes } from '#/utils/audioCategory';
 import Audio from '#/models/Audio';
+import { PopulateFavoriteList } from '#/@types/audio';
 
 interface CreateAudioRequest extends RequestWithFiles {
   body: {
@@ -13,6 +14,7 @@ interface CreateAudioRequest extends RequestWithFiles {
     category: categoriesTypes;
   };
 }
+
 export const createAudio: RequestHandler = async (
   req: CreateAudioRequest,
   res,
@@ -123,5 +125,28 @@ export const updateAudio: RequestHandler = async (
       file: existedAudio.file.url,
       poster: existedAudio.poster?.url,
     },
+  });
+};
+
+export const getLatestUploads: RequestHandler = async (req, res, next) => {
+  const list = await Audio.find({})
+    .populate<PopulateFavoriteList>('owner')
+    .limit(10)
+    .sort('-createdAt');
+
+  const audios = list.map((item) => {
+    return {
+      id: item?._id,
+      title: item?.title,
+      about: item?.about,
+      category: item?.category,
+      file: item?.file?.url,
+      poster: item?.poster?.url,
+      owner: { name: item?.owner?.name, id: item?.owner?._id },
+    };
+  });
+
+  return res.json({
+    audios,
   });
 };

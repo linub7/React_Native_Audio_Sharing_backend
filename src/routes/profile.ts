@@ -1,13 +1,18 @@
 import { Router } from 'express';
 import { isValidObjectId } from 'mongoose';
 
-import { isVerifiedAccount, protect } from '#/middlewares/auth';
+import {
+  isAuthenticated,
+  isVerifiedAccount,
+  protect,
+} from '#/middlewares/auth';
 import {
   getPublicUploads,
   updateFollower,
   getUploads,
   getPublicProfile,
   getPublicPlaylist,
+  getRecommendedByProfile,
 } from '#/controllers/profile';
 
 const router = Router();
@@ -24,5 +29,6 @@ router.get('/uploads', protect, getUploads);
 router.get('/uploads/:id', getPublicUploads);
 router.get('/infos/:id', getPublicProfile);
 router.get('/playlists/:id', getPublicPlaylist);
+router.get('/recommended', isAuthenticated, getRecommendedByProfile);
 
 export default router;
