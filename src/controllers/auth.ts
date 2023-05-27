@@ -127,11 +127,14 @@ export const sendReverificationToken: RequestHandler = async (
   } = req;
 
   if (!isValidObjectId(userId))
-    return res.status(404).json({ error: 'Invalid Request' });
+    return res.status(422).json({ error: 'Invalid Request' });
 
   const user = await User.findById(userId);
 
-  if (!user) return res.status(404).json({ error: 'Invalid Request' });
+  if (!user) return res.status(403).json({ error: 'Invalid Request' });
+
+  if (user.verified)
+    return res.status(422).json({ error: 'Your account already is verified!' });
 
   await EmailVerificationToken.findOneAndDelete({ owner: userId });
 
