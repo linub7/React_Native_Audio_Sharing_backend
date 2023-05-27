@@ -1,13 +1,11 @@
 import { RequestHandler } from 'express';
-import moment from 'moment';
 
 import { PaginationQuery } from '#/@types/misc';
 import { LIMIT_AMOUNT } from '#/constants';
 import Audio from '#/models/Audio';
-import History from '#/models/History';
 import Playlist from '#/models/Playlist';
 import User from '#/models/User';
-import { PipelineStage } from 'mongoose';
+import { PipelineStage, Types } from 'mongoose';
 import { getUserPreviousHistory } from '#/utils/helper';
 
 export const updateFollower: RequestHandler = async (req, res, next) => {
@@ -17,9 +15,6 @@ export const updateFollower: RequestHandler = async (req, res, next) => {
   } = req;
 
   let status: 'follow' | 'unfollow';
-
-  console.log('user.id', user.id);
-  console.log('profileId', id);
 
   if (user.id.toString() === id.toString())
     return res.status(422).json({ error: 'you can not follow yourself!' });
@@ -271,4 +266,167 @@ export const getRecommendedByProfile: RequestHandler = async (
   return res.json({
     audios,
   });
+};
+
+export const getMyProfileFollowers: RequestHandler = async (req, res, next) => {
+  const {
+    user: { id },
+  } = req;
+
+  const { page, limit } = req.query as PaginationQuery;
+
+  const pageNumber = parseInt(page, 10) || 1;
+  const limitAmount = parseInt(limit, 10) || LIMIT_AMOUNT;
+  const startIndex = (pageNumber - 1) * limitAmount;
+
+  const [result] = await User.aggregate([
+    { $match: { _id: id } },
+    {
+      $project: {
+        followers: {
+          $slice: ['$followers', startIndex, limitAmount],
+        },
+      },
+    },
+    { $unwind: '$followers' }, // "$followers" comes from line 288
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'followers', // "$followers" comes from line 288
+        foreignField: '_id',
+        as: 'followersInfo',
+      },
+    },
+    {
+      $unwind: '$followersInfo',
+    },
+    {
+      $group: {
+        _id: null,
+        followers: {
+          $push: {
+            id: '$followersInfo._id',
+            name: '$followersInfo.name',
+            avatar: '$followersInfo.avatar.url',
+          },
+        },
+      },
+    },
+  ]);
+
+  if (!result) {
+    return res.json({ followers: [] });
+  }
+
+  return res.json({ followers: result.followers });
+};
+
+export const getUserFollowers: RequestHandler = async (req, res, next) => {
+  const {
+    params: { id },
+  } = req;
+
+  const { page, limit } = req.query as PaginationQuery;
+
+  const pageNumber = parseInt(page, 10) || 1;
+  const limitAmount = parseInt(limit, 10) || LIMIT_AMOUNT;
+  const startIndex = (pageNumber - 1) * limitAmount;
+
+  const [result] = await User.aggregate([
+    { $match: { _id: new Types.ObjectId(id) } },
+    {
+      $project: {
+        followers: {
+          $slice: ['$followers', startIndex, limitAmount],
+        },
+      },
+    },
+    { $unwind: '$followers' }, // "$followers" comes from line 288
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'followers', // "$followers" comes from line 288
+        foreignField: '_id',
+        as: 'followersInfo',
+      },
+    },
+    {
+      $unwind: '$followersInfo',
+    },
+    {
+      $group: {
+        _id: null,
+        followers: {
+          $push: {
+            id: '$followersInfo._id',
+            name: '$followersInfo.name',
+            avatar: '$followersInfo.avatar.url',
+          },
+        },
+      },
+    },
+  ]);
+
+  if (!result) {
+    return res.json({ followers: [] });
+  }
+
+  return res.json({ followers: result.followers });
+};
+
+export const getMyProfileFollowings: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  const {
+    user: { id },
+  } = req;
+
+  const { page, limit } = req.query as PaginationQuery;
+
+  const pageNumber = parseInt(page, 10) || 1;
+  const limitAmount = parseInt(limit, 10) || LIMIT_AMOUNT;
+  const startIndex = (pageNumber - 1) * limitAmount;
+
+  const [result] = await User.aggregate([
+    { $match: { _id: id } },
+    {
+      $project: {
+        followings: {
+          $slice: ['$followings', startIndex, limitAmount],
+        },
+      },
+    },
+    { $unwind: '$followings' }, // "$followings" comes from line 288
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'followings', // "$followings" comes from line 288
+        foreignField: '_id',
+        as: 'followingsInfo',
+      },
+    },
+    {
+      $unwind: '$followingsInfo',
+    },
+    {
+      $group: {
+        _id: null,
+        followings: {
+          $push: {
+            id: '$followingsInfo._id',
+            name: '$followingsInfo.name',
+            avatar: '$followingsInfo.avatar.url',
+          },
+        },
+      },
+    },
+  ]);
+
+  if (!result) {
+    return res.json({ followings: [] });
+  }
+
+  return res.json({ followings: result.followings });
 };

@@ -13,6 +13,9 @@ import {
   getPublicProfile,
   getPublicPlaylist,
   getRecommendedByProfile,
+  getMyProfileFollowers,
+  getMyProfileFollowings,
+  getUserFollowers,
 } from '#/controllers/profile';
 
 const router = Router();
@@ -26,6 +29,9 @@ router.param('id', (req, res, next, val) => {
 
 router.get('/uploads', protect, getUploads);
 router.get('/recommended', isAuthenticated, getRecommendedByProfile);
+router.get('/followings', protect, getMyProfileFollowings);
+router.get('/followers', protect, getMyProfileFollowers);
+router.get('/followers/:id', protect, getUserFollowers);
 
 router.get('/uploads/:id', getPublicUploads);
 router.post('/update-follower/:id', protect, isVerifiedAccount, updateFollower);
