@@ -16,6 +16,7 @@ import {
   getMyProfileFollowers,
   getMyProfileFollowings,
   getUserFollowers,
+  getPublicPlaylistAudios,
 } from '#/controllers/profile';
 
 const router = Router();
@@ -37,5 +38,6 @@ router.get('/uploads/:id', getPublicUploads);
 router.post('/update-follower/:id', protect, isVerifiedAccount, updateFollower);
 router.get('/infos/:id', getPublicProfile);
 router.get('/playlists/:id', getPublicPlaylist);
+router.get('/playlists-audios/:id', getPublicPlaylistAudios);
 
 export default router;
