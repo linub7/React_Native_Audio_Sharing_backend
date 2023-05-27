@@ -85,6 +85,7 @@ export const getUploads: RequestHandler = async (req, res, next) => {
       id: item?._id,
       title: item?.title,
       about: item?.about,
+      category: item?.category,
       file: item?.file?.url,
       poster: item?.poster?.url,
       date: item?.createdAt,
@@ -527,4 +528,17 @@ export const getMyProfileFollowings: RequestHandler = async (
   }
 
   return res.json({ followings: result.followings });
+};
+
+export const getIsFollowing: RequestHandler = async (req, res, next) => {
+  const {
+    params: { id },
+    user,
+  } = req;
+
+  const result = await User.findOne({ _id: id, followers: user.id });
+
+  return res.json({
+    status: result ? true : false,
+  });
 };
