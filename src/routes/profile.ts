@@ -24,11 +24,12 @@ router.param('id', (req, res, next, val) => {
   next();
 });
 
-router.post('/update-follower/:id', protect, isVerifiedAccount, updateFollower);
 router.get('/uploads', protect, getUploads);
+router.get('/recommended', isAuthenticated, getRecommendedByProfile);
+
 router.get('/uploads/:id', getPublicUploads);
+router.post('/update-follower/:id', protect, isVerifiedAccount, updateFollower);
 router.get('/infos/:id', getPublicProfile);
 router.get('/playlists/:id', getPublicPlaylist);
-router.get('/recommended', isAuthenticated, getRecommendedByProfile);
 
 export default router;
