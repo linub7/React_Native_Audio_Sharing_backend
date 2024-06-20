@@ -79,7 +79,7 @@ export const updatePlaylist: RequestHandler = async (
   );
 
   if (!updatedPlaylist)
-    return res.status(404).json({ error: 'playlist not fount' });
+    return res.status(404).json({ error: 'playlist not found' });
 
   if (item) {
     const existedAudio = await Audio.findById(item);

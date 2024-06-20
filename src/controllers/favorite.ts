@@ -12,7 +12,7 @@ export const toggleFavorite: RequestHandler = async (req, res, next) => {
     user: { id },
   } = req;
 
-  let status: 'added' | 'removed';
+  let status: 'added to favorite' | 'removed from favorite';
 
   const audioId = req.query?.audioId as string;
 
@@ -34,7 +34,7 @@ export const toggleFavorite: RequestHandler = async (req, res, next) => {
       { $pull: { items: existedAudio._id } }
     );
 
-    status = 'removed';
+    status = 'removed from favorite';
   } else {
     const favorite = await Favorite.findOne({ owner: id });
     // try to add ew audio to the ols list
@@ -50,16 +50,16 @@ export const toggleFavorite: RequestHandler = async (req, res, next) => {
         items: [existedAudio._id],
       });
     }
-    status = 'added';
+    status = 'added to favorite';
   }
 
-  if (status === 'added') {
+  if (status === 'added to favorite') {
     await Audio.findByIdAndUpdate(existedAudio._id, {
       $addToSet: { likes: id },
     });
   }
 
-  if (status === 'removed') {
+  if (status === 'removed from favorite') {
     await Audio.findByIdAndUpdate(existedAudio._id, {
       $pull: { likes: id },
     });

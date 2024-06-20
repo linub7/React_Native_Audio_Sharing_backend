@@ -1,1 +1,1 @@
-export const LIMIT_AMOUNT: number = 4;
+export const LIMIT_AMOUNT: number = 10;

@@ -1,4 +1,5 @@
 import express from 'express';
+import morgan from 'morgan';
 import 'dotenv/config';
 import 'express-async-errors';
 import './db';
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static('src/public'));
+app.use(morgan('dev'));
 
 // Routes
 app.use('/api/v1/auth', authRoutes);

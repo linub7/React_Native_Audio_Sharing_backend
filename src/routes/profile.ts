@@ -29,17 +29,17 @@ router.param('id', (req, res, next, val) => {
   next();
 });
 
+router.get('/uploads/:id', getPublicUploads);
+router.post('/update-follower/:id', protect, updateFollower);
+router.get('/infos/:id', getPublicProfile);
+router.get('/playlists/:id', getPublicPlaylist);
+router.get('/playlists-audios/:id', getPublicPlaylistAudios);
+router.get('/is-following/:id', protect, getIsFollowing);
+
 router.get('/uploads', protect, getUploads);
 router.get('/recommended', isAuthenticated, getRecommendedByProfile);
 router.get('/followings', protect, getMyProfileFollowings);
 router.get('/followers', protect, getMyProfileFollowers);
 router.get('/followers/:id', protect, getUserFollowers);
-
-router.get('/uploads/:id', getPublicUploads);
-router.post('/update-follower/:id', protect, isVerifiedAccount, updateFollower);
-router.get('/infos/:id', getPublicProfile);
-router.get('/playlists/:id', getPublicPlaylist);
-router.get('/playlists-audios/:id', getPublicPlaylistAudios);
-router.get('/is-following/:id', protect, getIsFollowing);
 
 export default router;
