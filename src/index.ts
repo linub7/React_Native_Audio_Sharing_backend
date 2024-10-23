@@ -29,6 +29,10 @@ app.use('/api/v1/audios', audioRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
 app.use('/api/v1/playlists', playlistRoutes);
 
+app.use('/', (req, res) => {
+  res.json({ message: 'OK' });
+});
+
 app.get('*', (req, res) => {
   // Handle default route
   res.send('Hello from your Express.js app!');
