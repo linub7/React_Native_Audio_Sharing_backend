@@ -29,6 +29,11 @@ app.use('/api/v1/audios', audioRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
 app.use('/api/v1/playlists', playlistRoutes);
 
+app.get('*', (req, res) => {
+  // Handle default route
+  res.send('Hello from your Express.js app!');
+});
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 8989;
